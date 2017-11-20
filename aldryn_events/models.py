@@ -9,6 +9,7 @@ try:
 except ImportError:
     # Python==2.6
     import warnings
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         from django.utils.importlib import import_module
@@ -33,6 +34,8 @@ from aldryn_reversion.core import version_controlled_content
 from djangocms_text_ckeditor.fields import HTMLField
 from extended_choices import Choices
 from filer.fields.image import FilerImageField
+from filer.fields.folder import FilerFolderField
+
 from parler.models import TranslatableModel, TranslatedFields
 from sortedm2m.fields import SortedManyToManyField
 from reversion.revisions import default_revision_manager, RegistrationError
@@ -62,6 +65,7 @@ else:
     from django.core.exceptions import AppRegistryNotReady
 
     LTE_DJANGO_1_6 = False
+
 
     def get_model(app_label, model_name):
         """
@@ -94,6 +98,7 @@ else:
                 # exist). We just re-raise the exception.
                 raise
 
+
     # now get the real user model
     user_model = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
     model_app_name, model_model = user_model.split('.')
@@ -112,7 +117,6 @@ else:
 class Event(TranslatedAutoSlugifyMixin,
             TranslationHelperMixin,
             TranslatableModel):
-
     slug_source_field_name = 'title'
 
     start_date = models.DateField(_('start date'))
@@ -172,6 +176,10 @@ class Event(TranslatedAutoSlugifyMixin,
             verbose_name=_('image'), null=True, blank=True,
             related_name='event_images', on_delete=models.SET_NULL
         ),
+        image_folder=FilerFolderField(
+            verbose_name=_('image_folder'), null=True, blank=True,
+            related_name='event_image_folder', on_delete=models.SET_NULL
+        ),
         meta={'unique_together': (('language_code', 'slug'),)}
     )
     app_config = models.ForeignKey(EventsConfig, verbose_name=_('app_config'))
@@ -223,7 +231,7 @@ class Event(TranslatedAutoSlugifyMixin,
 
                 # check time validity
                 if (self.end_time < self.start_time or
-                        self.start_time == self.end_time):
+                            self.start_time == self.end_time):
                     raise ValidationError(
                         _('For same start and end dates start time '
                           'should be before end time.'))
@@ -311,7 +319,6 @@ class Event(TranslatedAutoSlugifyMixin,
 @python_2_unicode_compatible
 @version_controlled_content(follow=['user'])
 class EventCoordinator(models.Model):
-
     name = models.CharField(max_length=200, blank=True)
     email = models.EmailField(max_length=80, blank=True)
     user = models.OneToOneField(
@@ -337,6 +344,7 @@ class EventCoordinator(models.Model):
         if not email and self.user_id:
             email = self.user.email
         return email
+
     get_email_address.short_description = _('email')
 
     def get_name(self):
@@ -344,6 +352,7 @@ class EventCoordinator(models.Model):
         if not name and self.user_id:
             name = self.user.get_full_name()
         return name
+
     get_name.short_description = _('name')
 
     email_address = property(get_email_address)
@@ -494,7 +503,6 @@ class UpcomingPluginItem(BaseEventPlugin):
 
 @python_2_unicode_compatible
 class EventCalendarPlugin(BaseEventPlugin):
-
     cache_duration = models.PositiveSmallIntegerField(
         default=0,  # not the most sensible, but consistent with older versions
         blank=False,

@@ -50,6 +50,7 @@ class EventAdmin(
             'slug',
             'short_description',
             'image',
+            'image_folder',
             'location',
             ('start_date', 'start_time',),
             ('end_date', 'end_time',),
